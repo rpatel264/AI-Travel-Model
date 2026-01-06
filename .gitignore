@@ -1,0 +1,42 @@
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+**/.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Large PDF files - DO NOT COMMIT
+Chicago/Data/Raw/*.pdf
+Chicago/Data/Proceed/*.pdf
+
+# Processed data (optional - uncomment if you want to regenerate each time)
+# Chicago/Data/processed/*.json
+# Chicago/Data/processed/*.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+
+# Optional: Uncomment if summary_chunks.json gets too large
+# Chicago/summary_chunks.json
+
