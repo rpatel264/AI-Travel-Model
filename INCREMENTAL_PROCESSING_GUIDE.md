@@ -215,3 +215,4 @@ After processing PDFs:
 2. Use travel assistant: `python travel_assistant.py`
 3. Explore in notebook: `jupyter notebook notebooks/00_main_pipeline_hub.ipynb`
 
+

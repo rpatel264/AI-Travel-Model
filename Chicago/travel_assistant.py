@@ -8,13 +8,19 @@ Users can query historical information about Chicago locations, events, and land
 import sys
 from pathlib import Path
 
-# Add Chicago directory to path
-sys.path.insert(0, str(Path(__file__).parent / "Chicago"))
-
 # Import retrieval and query functions from Chicago modules
 from query_chunks import query_chunks, load_chunks
 from retrieval_bullets import search_chunks as search_with_years
 from retrieval_v2 import enhanced_search
+from semantic_search import semantic_search
+
+# Cache for loaded chunks
+_CACHED_CHUNKS = None
+def get_chunks():
+    global _CACHED_CHUNKS
+    if _CACHED_CHUNKS is None:
+        _CACHED_CHUNKS = load_chunks()
+    return _CACHED_CHUNKS
 
 def get_historical_context(location_or_query, top_k=3, year_filter=None):
     """
@@ -30,7 +36,7 @@ def get_historical_context(location_or_query, top_k=3, year_filter=None):
     """
     try:
         # Load chunks
-        chunks = load_chunks()
+        chunks = get_chunks()
         
         if not chunks:
             return "No historical data available. Please run the pipeline first to process PDFs."
@@ -43,7 +49,7 @@ def get_historical_context(location_or_query, top_k=3, year_filter=None):
                                        before=before, after=after, top_k=top_k)
         else:
             # Use query_chunks for general search
-            results = query_chunks(location_or_query, chunks=chunks, top_k=top_k)
+            results = semantic_search(location_or_query, chunks, top_k=top_k)
         
         if not results:
             return f"No historical information found for '{location_or_query}'. Try different keywords or check if the topic is covered in the processed documents."
