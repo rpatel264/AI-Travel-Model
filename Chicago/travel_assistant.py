@@ -22,6 +22,43 @@ def get_chunks():
         _CACHED_CHUNKS = load_chunks()
     return _CACHED_CHUNKS
 
+def answer_question(query: str, top_k: int = 5, year_filter=None) -> list:
+    """
+    Core retrieval function for UI and CLI.
+    Returns structured search results.
+    """
+    chunks = get_chunks()
+
+    if year_filter:
+        results = search_with_years(
+            query,
+            chunks,
+            before=year_filter.get("before"),
+            after=year_filter.get("after"),
+            top_k=top_k,
+        )
+    else:
+        results = semantic_search(query, chunks, top_k=top_k)
+
+    structured = []
+
+    for result in results:
+        if isinstance(result, tuple):
+            score, chunk = result
+        else:
+            score = None
+            chunk = result
+
+        structured.append({
+            "score": score,
+            "summary": chunk.get("summary_text") or chunk.get("summary", ""),
+            "pdf": Path(chunk.get("pdf_path", "")).name,
+            "chunk_position": chunk.get("chunk_position"),
+        })
+
+    return structured
+
+
 def get_historical_context(location_or_query, top_k=3, year_filter=None):
     """
     Get historical context for a Chicago location or topic.
@@ -41,15 +78,12 @@ def get_historical_context(location_or_query, top_k=3, year_filter=None):
         if not chunks:
             return "No historical data available. Please run the pipeline first to process PDFs."
         
-        # Use retrieval_bullets if year filtering is requested
-        if year_filter:
-            before = year_filter.get('before')
-            after = year_filter.get('after')
-            results = search_with_years(location_or_query, chunks, 
-                                       before=before, after=after, top_k=top_k)
-        else:
-            # Use query_chunks for general search
-            results = semantic_search(location_or_query, chunks, top_k=top_k)
+        results = answer_question(
+            location_or_query,
+            top_k=top_k,
+            year_filter=year_filter
+        )
+
         
         if not results:
             return f"No historical information found for '{location_or_query}'. Try different keywords or check if the topic is covered in the processed documents."
@@ -60,29 +94,23 @@ def get_historical_context(location_or_query, top_k=3, year_filter=None):
         output.append("=" * 60)
         
         for i, result in enumerate(results, 1):
-            if isinstance(result, tuple):
-                score, chunk = result
-            else:
-                chunk = result
-                score = None
+            score = result["score"]
+            summary = result["summary"]
+            pdf_name = result["pdf"]
+            chunk_position = result["chunk_position"]
+
+
             
-            # Get summary text
-            summary = chunk.get("summary_text") or chunk.get("summary", "")
-            
-            # Get PDF name
-            pdf_path = chunk.get("pdf_path", "")
-            if isinstance(pdf_path, str):
-                pdf_name = Path(pdf_path).name
-            else:
-                pdf_name = str(pdf_path)
+           
             
             output.append(f"\n📍 Result {i}")
-            if score:
+            if score is not None:
                 output.append(f"   Relevance Score: {score}")
             output.append(f"   Source: {pdf_name}")
-            output.append(f"   Chunk #{chunk.get('chunk_position', 'N/A')}")
+            output.append(f"   Chunk #{chunk_position}")
             output.append(f"\n   {summary}")
             output.append("-" * 60)
+
         
         return "\n".join(output)
         
