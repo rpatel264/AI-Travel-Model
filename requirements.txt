@@ -1,28 +1,27 @@
 # PDF Processing
 pdfplumber>=0.10.0
-# PyPDF2>=3.0.0
-# pypdf>=3.0.0
 
 # Text Processing
+# (uncomment if needed)
 # nltk>=3.8
 # spacy>=3.7.0
 
 # LLM/Summarization (Ollama)
-# ollama>=0.1.0
 # requests>=2.31.0
+# ollama>=0.1.0
 
 # Data Processing
-# pandas>=2.0.0
-# numpy>=1.24.0
+pandas>=2.1.0
+numpy>=1.26.0
 
 # Search/Retrieval
-# sentence-transformers>=2.2.0  # For semantic search/embeddings
-# faiss-cpu>=1.7.4  # For vector search (optional)
+sentence-transformers>=2.2.2
+torch>=2.2.0
+# faiss-cpu>=1.7.4  # optional, only if using vector search
 
 # Utilities
-# python-dotenv>=1.0.0
-# tqdm>=4.66.0  # Progress bars
-
-# Note: Uncomment and install dependencies as needed
-# pip install -r requirements.txt
+tqdm>=4.66.0
+python-dotenv>=1.0.0
+streamlit>=1.29.0
+huggingface-hub>=1.28.1
 
