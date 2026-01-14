@@ -76,15 +76,14 @@ def chunk_text(text, max_words, max_chunks=None):
 def summarize_with_ollama(text, chunk_index):
     """Summarize text using Ollama with error handling and retries."""
     prompt = f"""
-You must extract factual statements ONLY if they are fully and explicitly stated in the text.
-Do NOT infer, complete, or assume missing information.
-Ignore incomplete bullets, partial sentences, dates without context, or cut-off text.
-
-Return bullet points only.
+Summarize the FACTS from this text only in a clear, concise paragraph.
+Do NOT add interpretations, claims, or causes.
+No assumptions. No conclusions.
 
 TEXT:
 {text}
 """
+
     last_error = ""
     for attempt in range(RETRIES + 1):
         try:
