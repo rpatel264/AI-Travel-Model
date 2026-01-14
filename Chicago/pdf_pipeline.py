@@ -57,14 +57,14 @@ def chunk_text(text, max_tokens=500):
 def summarize_with_ollama(text):
     """Summarize text using Ollama with LLaMA model."""
     prompt = f"""
-Summarize the FACTS from this text only.
+Summarize the FACTS from this text only in a clear, concise paragraph.
 Do NOT add interpretations, claims, or causes.
 No assumptions. No conclusions.
-Return 2-4 bullet points maximum.
 
 TEXT:
 {text}
 """
+
 
     process = subprocess.Popen(
         ["ollama", "run", "llama3.1:8b"],
