@@ -100,16 +100,13 @@ def get_historical_context(location_or_query, top_k=3, year_filter=None):
             chunk_position = result["chunk_position"]
 
 
-            
-           
-            
-            output.append(f"\n📍 Result {i}")
+            # Format results for paragraph display
+            output.append(f"\nResult {i} - Source: {pdf_name}, Chunk #{chunk_position}")
             if score is not None:
-                output.append(f"   Relevance Score: {score}")
-            output.append(f"   Source: {pdf_name}")
-            output.append(f"   Chunk #{chunk_position}")
-            output.append(f"\n   {summary}")
+                output.append(f"Relevance Score: {score}")
+            output.append(summary)
             output.append("-" * 60)
+
 
         
         return "\n".join(output)
