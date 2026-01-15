@@ -5,14 +5,13 @@ This is the main entry point for the Chicago historical context travel assistant
 Users can query historical information about Chicago locations, events, and landmarks.
 """
 
-import sys
+import subprocess
 from pathlib import Path
 
-# Import retrieval and query functions from Chicago modules
-from query_chunks import query_chunks, load_chunks
+from query_chunks import load_chunks
 from retrieval_bullets import search_chunks as search_with_years
-from retrieval_v2 import enhanced_search
 from semantic_search import semantic_search
+
 
 # Cache for loaded chunks
 _CACHED_CHUNKS = None
@@ -51,70 +50,110 @@ def answer_question(query: str, top_k: int = 5, year_filter=None) -> list:
 
         structured.append({
             "score": score,
-            "summary": chunk.get("summary_text") or chunk.get("summary", ""),
+            "summary": chunk.get("summary_text", ""),
             "pdf": Path(chunk.get("pdf_path", "")).name,
             "chunk_position": chunk.get("chunk_position"),
         })
 
     return structured
 
+def synthesize_answer(question, retrieved_chunks):
+    """
+    Combine multiple factual summaries into a single coherent
+    engineering-focused historical answer with numbered citations.
+    """
+    # Build a reference map: (pdf, chunk) -> reference number
+    ref_map = {}
+    references = []
+    for idx, c in enumerate(retrieved_chunks, start=1):
+        pdf = c.get("pdf", "Unknown PDF")
+        chunk = c.get("chunk_position", "?")
+        key = (pdf, chunk)
+        if key not in ref_map:
+            ref_map[key] = len(ref_map) + 1
+            references.append((ref_map[key], pdf, chunk))
+
+    # Add citation numbers inline
+    combined = "\n\n".join(
+        f"- {c['summary']} [{ref_map[(c['pdf'], c['chunk_position'])]}]"
+        for c in retrieved_chunks if c.get("summary")
+    )
+
+    prompt = f"""
+You are an engineering historian.
+
+Using ONLY the factual summaries below, write a single,
+coherent paragraph that answers the question.
+
+Focus on engineering, construction methods, infrastructure,
+and technical constraints. Do NOT add facts beyond the summaries.
+Include inline reference numbers as shown.
+
+Question:
+{question}
+
+Factual summaries:
+{combined}
+"""
+
+    try:
+        process = subprocess.Popen(
+            ["ollama", "run", "llama3.1:8b"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace"
+        )
+
+        output, _ = process.communicate(prompt, timeout=300)
+        return output.strip(), references
+    
+    except subprocess.TimeoutExpired:
+        process.kill()
+        return "⚠️ Error: Ollama timed out while synthesizing the answer.", references
+    except Exception as e:
+        return f"⚠️ Error: Failed to synthesize answer. {e}", references
+
 
 def get_historical_context(location_or_query, top_k=3, year_filter=None):
     """
-    Get historical context for a Chicago location or topic.
-    
-    Args:
-        location_or_query: String describing a location, landmark, or historical topic
-        top_k: Number of results to return (default: 3)
-        year_filter: Optional dict with 'before' or 'after' keys for year filtering
-        
-    Returns:
-        Formatted historical context information
+    Get historical context for a Chicago location or topic with numbered citations.
     """
     try:
-        # Load chunks
         chunks = get_chunks()
-        
         if not chunks:
             return "No historical data available. Please run the pipeline first to process PDFs."
-        
-        results = answer_question(
-            location_or_query,
-            top_k=top_k,
-            year_filter=year_filter
-        )
 
-        
+        results = answer_question(location_or_query, top_k=top_k, year_filter=year_filter)
         if not results:
             return f"No historical information found for '{location_or_query}'. Try different keywords or check if the topic is covered in the processed documents."
-        
-        # Format results for display
-        output = []
-        output.append(f"📚 Historical Context for: {location_or_query}")
-        output.append("=" * 60)
-        
-        for i, result in enumerate(results, 1):
-            score = result["score"]
-            summary = result["summary"]
-            pdf_name = result["pdf"]
-            chunk_position = result["chunk_position"]
 
+        # Generate synthesized paragraph and get references
+        synthesized, references = synthesize_answer(location_or_query, results)
 
-            # Format results for paragraph display
-            output.append(f"\nResult {i} - Source: {pdf_name}, Chunk #{chunk_position}")
-            if score is not None:
-                output.append(f"Relevance Score: {score}")
-            output.append(summary)
-            output.append("-" * 60)
+        # Format reference list
+        ref_lines = [f"[{num}] {pdf}, chunk {chunk}" for num, pdf, chunk in references]
 
+        output = [
+            f"📚 Historical Context for: {location_or_query}",
+            "=" * 60,
+            "Engineering-Focused Historical Summary",
+            "-" * 60,
+            synthesized,
+            "\nReferences:",
+            "-" * 60,
+        ]
+        output.extend(ref_lines)
 
-        
         return "\n".join(output)
-        
+
     except FileNotFoundError:
         return "Error: Historical data not found. Please run 'engineering_pipeline.py' first to process PDFs."
     except Exception as e:
         return f"Error retrieving historical context: {e}"
+
 
 def main():
     """Main interface for the travel assistant."""
@@ -127,7 +166,7 @@ def main():
     
     # Load chunks once at startup
     try:
-        chunks = load_chunks()
+        chunks = get_chunks()
         if not chunks:
             print("\n⚠️  Warning: No historical data loaded. Run the pipeline first.")
             print("   Run: cd Chicago && python engineering_pipeline.py")
