@@ -98,7 +98,7 @@ Factual summaries:
 
     try:
         process = subprocess.Popen(
-            ["ollama", "run", "llama3.1:8b"],
+            ["C:\\Users\\Rishi\\AppData\\Local\\Programs\\Ollama\\ollama.exe", "run", "llama3.1:8b"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
