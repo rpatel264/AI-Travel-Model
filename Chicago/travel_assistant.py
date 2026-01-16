@@ -61,6 +61,7 @@ def answer_question(query: str, top_k: int = 5, year_filter=None) -> list:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 def synthesize_answer(question, retrieved_chunks):
     """
     Combine multiple factual summaries into a single coherent
@@ -120,6 +121,8 @@ Factual summaries:
     except Exception as e:
         return f"⚠️ Error: Failed to synthesize answer. {e}", references
 
+=======
+>>>>>>> parent of a8b1227 (editing chunking and summaries)
 =======
 >>>>>>> parent of a8b1227 (editing chunking and summaries)
 =======
