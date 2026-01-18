@@ -1,11 +1,11 @@
 """
-AI Travel Assistant for Chicago - Main Interface
+AI Travel Assistant for Chicago
 
-This is the main entry point for the Chicago historical context travel assistant.
-Users can query historical information about Chicago locations, events, and landmarks.
+This module handles historical context retrieval from processed Chicago PDFs.
 """
 
 import sys
+import subprocess
 from pathlib import Path
 
 # Import retrieval and query functions from Chicago modules
@@ -16,6 +16,7 @@ from semantic_search import semantic_search
 
 # Cache for loaded chunks
 _CACHED_CHUNKS = None
+
 def get_chunks():
     global _CACHED_CHUNKS
     if _CACHED_CHUNKS is None:
@@ -58,10 +59,6 @@ def answer_question(query: str, top_k: int = 5, year_filter=None) -> list:
 
     return structured
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 def synthesize_answer(question, retrieved_chunks):
     """
     Combine multiple factual summaries into a single coherent
@@ -114,74 +111,59 @@ Factual summaries:
 
         output, _ = process.communicate(prompt, timeout=300)
         return output.strip(), references
-    
+
     except subprocess.TimeoutExpired:
         process.kill()
         return "⚠️ Error: Ollama timed out while synthesizing the answer.", references
     except Exception as e:
         return f"⚠️ Error: Failed to synthesize answer. {e}", references
 
-=======
->>>>>>> parent of a8b1227 (editing chunking and summaries)
-=======
->>>>>>> parent of a8b1227 (editing chunking and summaries)
-=======
->>>>>>> parent of a8b1227 (editing chunking and summaries)
-=======
->>>>>>> parent of a8b1227 (editing chunking and summaries)
-
 def get_historical_context(location_or_query, top_k=3, year_filter=None):
     """
     Get historical context for a Chicago location or topic.
-    
+
     Args:
         location_or_query: String describing a location, landmark, or historical topic
         top_k: Number of results to return (default: 3)
         year_filter: Optional dict with 'before' or 'after' keys for year filtering
-        
+
     Returns:
         Formatted historical context information
     """
     try:
-        # Load chunks
         chunks = get_chunks()
-        
+
         if not chunks:
             return "No historical data available. Please run the pipeline first to process PDFs."
-        
+
         results = answer_question(
             location_or_query,
             top_k=top_k,
             year_filter=year_filter
         )
 
-        
         if not results:
             return f"No historical information found for '{location_or_query}'. Try different keywords or check if the topic is covered in the processed documents."
-        
+
         # Format results for display
         output = []
         output.append(f"📚 Historical Context for: {location_or_query}")
         output.append("=" * 60)
-        
+
         for i, result in enumerate(results, 1):
             score = result["score"]
             summary = result["summary"]
             pdf_name = result["pdf"]
             chunk_position = result["chunk_position"]
 
-
-            # Format results for paragraph display
             output.append(f"\nResult {i} - Source: {pdf_name}, Chunk #{chunk_position}")
             if score is not None:
                 output.append(f"Relevance Score: {score}")
             output.append(summary)
             output.append("-" * 60)
 
-
-        
         return "\n".join(output)
-        
+
     except FileNotFoundError:
         return "Error: Historical data not found. Please run 'engineering_pipeline.py' first to process PDFs."
     except Exception as e:
@@ -195,8 +177,7 @@ def main():
     print("\nAsk questions about Chicago's history, landmarks, events, or locations.")
     print("Examples: 'mayor chicago', 'architecture', 'great fire', '1871'")
     print("\nCommands: 'quit' or 'exit' to leave, 'help' for more options")
-    
-    # Load chunks once at startup
+
     try:
         chunks = load_chunks()
         if not chunks:
@@ -206,16 +187,16 @@ def main():
         print("\n⚠️  Warning: Historical data file not found.")
         print("   Run: cd Chicago && python engineering_pipeline.py")
         chunks = None
-    
+
     while True:
         query = input("\n🔍 Your question: ").strip()
-        
+
         if not query:
             continue
-            
+
         if query.lower() in ['quit', 'exit', 'q']:
             break
-        
+
         if query.lower() == 'help':
             print("\n" + "=" * 60)
             print("HELP - Available Commands")
@@ -226,13 +207,12 @@ def main():
             print("• Commands: 'quit', 'exit', 'help'")
             print("=" * 60)
             continue
-        
-        # Check for year filter hints in query
+
+        # Year filter extraction
         year_filter = None
         query_lower = query.lower()
-        
+
         if 'before' in query_lower:
-            # Try to extract year after 'before'
             try:
                 parts = query_lower.split('before')
                 if len(parts) > 1:
@@ -241,7 +221,7 @@ def main():
                     query = query_lower.split('before')[0].strip()
             except:
                 pass
-        
+
         if 'after' in query_lower and not year_filter:
             try:
                 parts = query_lower.split('after')
@@ -251,16 +231,13 @@ def main():
                     query = query_lower.split('after')[0].strip()
             except:
                 pass
-        
-        # Get and display historical context
+
         context = get_historical_context(query, top_k=3, year_filter=year_filter)
         print(f"\n{context}")
-    
+
     print("\n" + "=" * 60)
     print("Thank you for using the Chicago Travel Assistant! 👋")
     print("=" * 60)
 
 if __name__ == "__main__":
     main()
-
-
