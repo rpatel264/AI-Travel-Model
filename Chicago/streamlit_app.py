@@ -22,10 +22,10 @@ after_year = st.sidebar.number_input(
     "After year", min_value=1700, max_value=2099, value=None
 )
 
-# Optional: let users select search method
+# Let users select search method
 search_method = st.sidebar.radio(
     "Search method:",
-    ["Semantic Search", "Keyword Search"]
+    ["Keyword Search", "Semantic Search"]
 )
 
 # User query input
@@ -42,10 +42,11 @@ if query:
         result_text = get_historical_context(
             query,
             top_k=5,
-            year_filter=year_filter or None
+            year_filter=year_filter or None,
+            search_method=search_method  # pass the selected method
         )
 
-    # Split results by chunk separator (you can adjust if needed)
+    # Split results by chunk separator
     chunks = result_text.split("-" * 60)
 
     st.markdown(f"### 📚 Results for: {query}")
