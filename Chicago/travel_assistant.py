@@ -44,11 +44,16 @@ def answer_question(query: str, top_k: int = 5, year_filter=None, search_method=
 
     structured = []
     for result in results:
-        if isinstance(result, tuple):
-            score, chunk = result
-        else:
-            score = None
-            chunk = result
+    # Expect (score, chunk_dict)
+    if isinstance(result, tuple) and len(result) == 2:
+        score, chunk = result
+    elif isinstance(result, dict):
+        score = None
+        chunk = result
+    else:
+        # Skip malformed results
+        continue
+
 
         structured.append({
             "score": score,
