@@ -1,40 +1,49 @@
 """
 AI Travel Assistant for Chicago
 
-This module handles historical context retrieval from processed Chicago PDFs.
+Handles historical context retrieval from processed Chicago PDFs.
 """
 
-import subprocess
 from pathlib import Path
 
-# Import retrieval and query functions from Chicago modules
-from query_chunks import query_chunks, load_chunks
+# Imports from project modules
+from query_chunks import load_chunks
 from retrieval_bullets import search_chunks as search_with_years
-from semantic_search import semantic_search  # Added for semantic search
+from semantic_search import semantic_search
 
-# Cache for loaded chunks
+# Cache loaded chunks
 _CACHED_CHUNKS = None
 
+
 def get_chunks():
+    """Load and cache summary chunks."""
     global _CACHED_CHUNKS
     if _CACHED_CHUNKS is None:
         _CACHED_CHUNKS = load_chunks()
     return _CACHED_CHUNKS
 
-def answer_question(query: str, top_k: int = 5, year_filter=None, search_method="Keyword Search") -> list:
+
+def answer_question(
+    query: str,
+    top_k: int = 5,
+    year_filter=None,
+    search_method: str = "Keyword Search",
+):
     """
-    Core retrieval function for UI and CLI.
-    Returns structured search results.
+    Core retrieval function.
+    Returns structured results for UI.
     """
     chunks = get_chunks()
-    results = []
+    if not chunks:
+        return []
 
+    # Run selected search method
     if search_method == "Semantic Search":
-        # Use semantic search
-        results = semantic_search(query, chunks, top_k=top_k)
+        # Returns [(score, chunk_dict), ...]
+        raw_results = semantic_search(query, chunks, top_k=top_k)
     else:
-        # Default: keyword/year-based search
-        results = search_with_years(
+        # Keyword + year filtering
+        raw_results = search_with_years(
             query,
             chunks,
             before=year_filter.get("before") if year_filter else None,
@@ -43,17 +52,16 @@ def answer_question(query: str, top_k: int = 5, year_filter=None, search_method=
         )
 
     structured = []
-    for result in results:
-    # Expect (score, chunk_dict)
-    if isinstance(result, tuple) and len(result) == 2:
-        score, chunk = result
-    elif isinstance(result, dict):
-        score = None
-        chunk = result
-    else:
-        # Skip malformed results
-        continue
 
+    for item in raw_results:
+        # Normalize result format
+        if isinstance(item, tuple) and len(item) == 2:
+            score, chunk = item
+        elif isinstance(item, dict):
+            score = None
+            chunk = item
+        else:
+            continue
 
         structured.append({
             "score": score,
@@ -64,45 +72,47 @@ def answer_question(query: str, top_k: int = 5, year_filter=None, search_method=
 
     return structured
 
-def get_historical_context(location_or_query, top_k=3, year_filter=None, search_method="Keyword Search"):
+
+def get_historical_context(
+    location_or_query,
+    top_k=3,
+    year_filter=None,
+    search_method="Keyword Search",
+):
     """
-    Get historical context for a Chicago location or topic.
+    Get formatted historical context for display.
     """
     try:
-        chunks = get_chunks()
-        if not chunks:
-            return "No historical data available. Please run the pipeline first to process PDFs."
-
         results = answer_question(
             location_or_query,
             top_k=top_k,
             year_filter=year_filter,
-            search_method=search_method
+            search_method=search_method,
         )
 
         if not results:
-            return f"No historical information found for '{location_or_query}'. Try different keywords or check if the topic is covered in the processed documents."
+            return (
+                f"No historical information found for "
+                f"'{location_or_query}'."
+            )
 
-        # Format results for display
         output = []
         output.append(f"📚 Historical Context for: {location_or_query}")
         output.append("=" * 60)
 
-        for i, result in enumerate(results, 1):
-            score = result["score"]
-            summary = result["summary"]
-            pdf_name = result["pdf"]
-            chunk_position = result["chunk_position"]
+        for i, r in enumerate(results, start=1):
+            output.append(
+                f"\nResult {i} - Source: {r['pdf']}, "
+                f"Chunk #{r['chunk_position']}"
+            )
 
-            output.append(f"\nResult {i} - Source: {pdf_name}, Chunk #{chunk_position}")
-            if score is not None:
-                output.append(f"Relevance Score: {score:.3f}")
-            output.append(summary)
+            if r["score"] is not None:
+                output.append(f"Relevance Score: {r['score']:.3f}")
+
+            output.append(r["summary"])
             output.append("-" * 60)
 
         return "\n".join(output)
 
-    except FileNotFoundError:
-        return "Error: Historical data not found. Please run 'engineering_pipeline.py' first to process PDFs."
     except Exception as e:
         return f"Error retrieving historical context: {e}"
