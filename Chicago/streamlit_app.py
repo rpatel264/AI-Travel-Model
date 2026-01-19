@@ -14,15 +14,10 @@ st.write(
     "Examples: 'mayor chicago', 'architecture', 'great fire', '1871'"
 )
 
-# Sidebar for optional year filtering (kept for reference, but semantic search ignores it)
-st.sidebar.header("Optional Year Filter")
-before_year = st.sidebar.number_input("Before year", min_value=1700, max_value=2099, value=None)
-after_year = st.sidebar.number_input("After year", min_value=1700, max_value=2099, value=None)
-
 # Always use semantic search
 search_method = "Semantic Search"
 
-# Debug: show chunk loading info
+# Optional: debug info for chunks (can remove entirely later)
 chunks = get_chunks()
 st.sidebar.write("✅ Loaded chunks")
 if chunks:
