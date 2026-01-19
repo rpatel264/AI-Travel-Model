@@ -29,11 +29,21 @@ def answer_question(query: str, top_k: int = 5):
     if not chunks:
         return []
 
-    # Semantic search returns list of (score, chunk_dict) tuples
+    # Semantic search returns a list of (score, chunk_dict) tuples
     raw_results = semantic_search(query, chunks, top_k=top_k)
 
     structured = []
-    for score, chunk in raw_results:  # Always tuple
+    for item in raw_results:
+        # Ensure correct unpacking
+        if isinstance(item, tuple) and len(item) == 2:
+            score, chunk = item
+        elif isinstance(item, dict):
+            score = None
+            chunk = item
+        else:
+            # Skip malformed results
+            continue
+
         structured.append({
             "score": score,
             "summary": chunk.get("summary_text") or chunk.get("summary", ""),
@@ -58,7 +68,8 @@ def get_historical_context(location_or_query, top_k=3):
 
         for i, r in enumerate(results, start=1):
             output.append(f"\nResult {i} - Source: {r['pdf']}, Chunk #{r['chunk_position']}")
-            output.append(f"Relevance Score: {r['score']:.3f}")
+            if r["score"] is not None:
+                output.append(f"Relevance Score: {r['score']:.3f}")
             output.append(r["summary"])
             output.append("-" * 60)
 
