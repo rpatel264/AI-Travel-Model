@@ -22,11 +22,8 @@ after_year = st.sidebar.number_input(
     "After year", min_value=1700, max_value=2099, value=None
 )
 
-# Let users select search method
-search_method = st.sidebar.radio(
-    "Search method:",
-    ["Keyword Search", "Semantic Search"]
-)
+# Always use Semantic Search
+search_method = "Semantic Search"
 
 # User query input
 query = st.text_input("🔍 Your question:")
