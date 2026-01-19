@@ -1,5 +1,5 @@
 import streamlit as st
-from travel_assistant import get_historical_context, get_chunks
+from travel_assistant import get_historical_context
 
 # Page configuration
 st.set_page_config(
@@ -13,16 +13,6 @@ st.write(
     "Ask questions about Chicago's history, landmarks, events, or locations.\n"
     "Examples: 'mayor chicago', 'architecture', 'great fire', '1871'"
 )
-
-# Always use semantic search
-search_method = "Semantic Search"
-
-# Optional: debug info for chunks (can remove entirely later)
-chunks = get_chunks()
-st.sidebar.write("✅ Loaded chunks")
-if chunks:
-    st.sidebar.write(f"Number of chunks: {len(chunks)}")
-    st.sidebar.write(f"First chunk preview: {chunks[0]['summary_text'][:100]}...")
 
 # User query input
 query = st.text_input("🔍 Your question:")
