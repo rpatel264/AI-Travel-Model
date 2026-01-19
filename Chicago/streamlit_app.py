@@ -1,6 +1,24 @@
 import streamlit as st
 from travel_assistant import get_historical_context
+from Chicago.historical_context import load_chunks, semantic_search
 
+# Load chunks
+chunks = load_chunks()
+st.write("Loaded chunks type:", type(chunks))
+st.write("Number of chunks loaded:", len(chunks) if chunks else 0)
+
+if chunks and isinstance(chunks, list):
+    st.write("First chunk keys:", list(chunks[0].keys()))
+    st.write("First chunk summary_text preview:", chunks[0]["summary_text"][:100])
+
+# Test semantic search
+if chunks:
+    test_query = "why is the river reversed"
+    results = semantic_search(test_query, chunks)
+    st.write("Semantic search results type:", type(results))
+    st.write("Number of results:", len(results) if results else 0)
+    if results:
+        st.write("First result keys:", list(results[0].keys()) if isinstance(results[0], dict) else results[0])
 st.set_page_config(
     page_title="Chicago Historical Travel Assistant",
     page_icon="🏙️",
