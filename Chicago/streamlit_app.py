@@ -17,29 +17,21 @@ st.write(
 # User query input
 query = st.text_input("🔍 Your question:")
 
-LOW_RELEVANCE_THRESHOLD = 0.6  # adjust as needed
+LOW_RELEVANCE_THRESHOLD = 0.6  # Adjust this threshold as needed
 
 if query:
     with st.spinner("Retrieving historical context..."):
-        # Return results along with their relevance scores
+        # Get structured results including relevance scores
         results = get_historical_context(query, top_k=5, return_scores=True)
 
-if not results or results[0]['score'] < 0.5:
-    st.warning("No sufficiently relevant historical information could be found for your query.")
-else:
-    for i, r in enumerate(results, start=1):
-        with st.expander(f"Result {i} - Source: {r['pdf']}, Chunk #{r['chunk_position']} (Score: {r['score']:.2f})"):
-            st.markdown(r['summary'])
-
-        # Show message only if relevance is too low
+    if not results:
+        st.warning("No historical information could be found for your query.")
+    else:
+        top_score = results[0]['score'] or 0
         if top_score < LOW_RELEVANCE_THRESHOLD:
-            st.info("⚠️ The system could not find a confident answer. Try rephrasing your question.")
+            st.warning("No sufficiently relevant historical information could be found for your query.")
         else:
-            # Display results only if relevance is high enough
             st.markdown(f"### 📚 Results for: {query}")
-            for i, chunk in enumerate(chunks_output, start=1):
-                chunk = chunk.strip()
-                if not chunk:
-                    continue
-                with st.expander(f"Result {i} (Relevance: {scores[i-1]:.2f})"):
-                    st.markdown(chunk)
+            for i, r in enumerate(results, start=1):
+                with st.expander(f"Result {i} - Source: {r['pdf']}, Chunk #{r['chunk_position']} (Score: {r['score']:.2f})"):
+                    st.markdown(r['summary'])
