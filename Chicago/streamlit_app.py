@@ -17,31 +17,29 @@ st.write(
 # User query input
 query = st.text_input("🔍 Your question:")
 
+LOW_RELEVANCE_THRESHOLD = 0.6  # adjust as needed
+
 if query:
     with st.spinner("Retrieving historical context..."):
-        # Set return_scores=True so we get similarity scores
+        # Return results along with their relevance scores
         results = get_historical_context(query, top_k=5, return_scores=True)
 
     if not results:
-        st.warning("No results found. Try rephrasing your question.")
+        st.warning("⚠️ No relevant historical information found.")
     else:
-        # Compute the highest similarity score
-        top_score = max(result["similarity"] for result in results)
-        relevance_threshold = 0.6  # tweak this threshold if needed
+        # Separate the chunks and scores
+        chunks_output, scores = zip(*results)  # results is [(text, score), ...]
+        top_score = max(scores)
 
-        # Show a message if the top score is low
-        if top_score < relevance_threshold:
-            st.info(
-                "⚠️ The system could not find a highly relevant answer. "
-                "Try rephrasing your question or asking about a different topic."
-            )
-
-        st.markdown(f"### 📚 Results for: {query}")
-
-        # Display the chunks
-        for i, result in enumerate(results, start=1):
-            chunk_text = result["text"].strip()
-            if not chunk_text:
-                continue
-            with st.expander(f"Result {i} (Score: {result['similarity']:.2f})"):
-                st.markdown(chunk_text)
+        # Show message only if relevance is too low
+        if top_score < LOW_RELEVANCE_THRESHOLD:
+            st.info("⚠️ The system could not find a confident answer. Try rephrasing your question.")
+        else:
+            # Display results only if relevance is high enough
+            st.markdown(f"### 📚 Results for: {query}")
+            for i, chunk in enumerate(chunks_output, start=1):
+                chunk = chunk.strip()
+                if not chunk:
+                    continue
+                with st.expander(f"Result {i} (Relevance: {scores[i-1]:.2f})"):
+                    st.markdown(chunk)
