@@ -18,7 +18,7 @@ st.write(
 query = st.text_input("🔍 Your question:")
 
 # Threshold for low relevance
-LOW_RELEVANCE_THRESHOLD = 0.6
+LOW_RELEVANCE_THRESHOLD = 0.4
 
 if query:
     with st.spinner("Retrieving historical context..."):
