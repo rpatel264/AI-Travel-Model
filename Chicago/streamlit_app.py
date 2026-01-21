@@ -24,12 +24,12 @@ if query:
         # Return results along with their relevance scores
         results = get_historical_context(query, top_k=5, return_scores=True)
 
-    if not results:
-        st.warning("⚠️ No relevant historical information found.")
-    else:
-        # Separate the chunks and scores
-        chunks_output, scores = zip(*results)  # results is [(text, score), ...]
-        top_score = max(scores)
+if not results or results[0]['score'] < 0.5:
+    st.warning("No sufficiently relevant historical information could be found for your query.")
+else:
+    for i, r in enumerate(results, start=1):
+        with st.expander(f"Result {i} - Source: {r['pdf']}, Chunk #{r['chunk_position']} (Score: {r['score']:.2f})"):
+            st.markdown(r['summary'])
 
         # Show message only if relevance is too low
         if top_score < LOW_RELEVANCE_THRESHOLD:
