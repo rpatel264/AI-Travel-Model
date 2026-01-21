@@ -23,7 +23,7 @@ def get_chunks():
 def answer_question(query: str, top_k: int = 5):
     """
     Core retrieval function using semantic search only.
-    Returns structured results for UI.
+    Returns structured results for UI with relevance scores.
     """
     chunks = get_chunks()
     if not chunks:
@@ -45,7 +45,7 @@ def answer_question(query: str, top_k: int = 5):
             continue
 
         structured.append({
-            "score": score,
+            "score": score if score is not None else 0.0,  # default to 0 if missing
             "summary": chunk.get("summary_text") or chunk.get("summary", ""),
             "pdf": Path(chunk.get("pdf_path", "")).name,
             "chunk_position": chunk.get("chunk_position"),
@@ -55,24 +55,28 @@ def answer_question(query: str, top_k: int = 5):
 
 
 def get_historical_context(location_or_query, top_k=3, return_scores=False):
-    results = answer_question(location_or_query, top_k=top_k)
+    """
+    Get structured historical context results for a query.
+    If return_scores=True, returns list of dicts with 'score', 'summary', etc.
+    Otherwise, returns legacy formatted string.
+    """
+    try:
+        results = answer_question(location_or_query, top_k=top_k)
 
-    if not results:
-        return [] if return_scores else f"No historical information found for '{location_or_query}'."
+        if not results:
+            return [] if return_scores else f"No historical information found for '{location_or_query}'."
 
-    if return_scores:
-        return results  # return list of dicts with 'score', 'summary', etc.
+        if return_scores:
+            return results
 
-    # Otherwise, build formatted text (legacy behavior)
-    output = [f"📚 Historical Context for: {location_or_query}", "=" * 60]
-    for i, r in enumerate(results, start=1):
-        output.append(f"\nResult {i} - Source: {r['pdf']}, Chunk #{r['chunk_position']}")
-        if r["score"] is not None:
+        # Legacy formatted string (not needed for Streamlit now)
+        output = [f"📚 Historical Context for: {location_or_query}", "=" * 60]
+        for i, r in enumerate(results, start=1):
+            output.append(f"\nResult {i} - Source: {r['pdf']}, Chunk #{r['chunk_position']}")
             output.append(f"Relevance Score: {r['score']:.3f}")
-        output.append(r["summary"])
-        output.append("-" * 60)
-    return "\n".join(output)
-
+            output.append(r["summary"])
+            output.append("-" * 60)
+        return "\n".join(output)
 
     except Exception as e:
         return f"Error retrieving historical context: {e}"

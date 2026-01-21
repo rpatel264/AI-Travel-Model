@@ -17,19 +17,24 @@ st.write(
 # User query input
 query = st.text_input("🔍 Your question:")
 
-LOW_RELEVANCE_THRESHOLD = 0.6  # Adjust this threshold as needed
+# Threshold for low relevance
+LOW_RELEVANCE_THRESHOLD = 0.6
 
 if query:
     with st.spinner("Retrieving historical context..."):
-        # Get structured results including relevance scores
+        # Return structured results with relevance scores
         results = get_historical_context(query, top_k=5, return_scores=True)
 
     if not results:
-        st.warning("No historical information could be found for your query.")
+        st.warning(f"No historical information found for '{query}'.")
     else:
-        top_score = results[0]['score'] or 0
+        top_score = results[0]['score']
+
         if top_score < LOW_RELEVANCE_THRESHOLD:
-            st.warning("No sufficiently relevant historical information could be found for your query.")
+            st.warning(
+                "⚠️ The system could not find a confident answer. "
+                "Try rephrasing your question or asking about a different topic."
+            )
         else:
             st.markdown(f"### 📚 Results for: {query}")
             for i, r in enumerate(results, start=1):
