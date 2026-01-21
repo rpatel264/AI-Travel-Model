@@ -19,16 +19,29 @@ query = st.text_input("🔍 Your question:")
 
 if query:
     with st.spinner("Retrieving historical context..."):
-        result_text = get_historical_context(query, top_k=5)
+        # Set return_scores=True so we get similarity scores
+        results = get_historical_context(query, top_k=5, return_scores=True)
 
-    # Split results by chunk separator
-    chunks_output = result_text.split("-" * 60)
+    if not results:
+        st.warning("No results found. Try rephrasing your question.")
+    else:
+        # Compute the highest similarity score
+        top_score = max(result["similarity"] for result in results)
+        relevance_threshold = 0.6  # tweak this threshold if needed
 
-    st.markdown(f"### 📚 Results for: {query}")
+        # Show a message if the top score is low
+        if top_score < relevance_threshold:
+            st.info(
+                "⚠️ The system could not find a highly relevant answer. "
+                "Try rephrasing your question or asking about a different topic."
+            )
 
-    for i, chunk in enumerate(chunks_output, start=1):
-        chunk = chunk.strip()
-        if not chunk:
-            continue
-        with st.expander(f"Result {i}"):
-            st.markdown(chunk)
+        st.markdown(f"### 📚 Results for: {query}")
+
+        # Display the chunks
+        for i, result in enumerate(results, start=1):
+            chunk_text = result["text"].strip()
+            if not chunk_text:
+                continue
+            with st.expander(f"Result {i} (Score: {result['similarity']:.2f})"):
+                st.markdown(chunk_text)
